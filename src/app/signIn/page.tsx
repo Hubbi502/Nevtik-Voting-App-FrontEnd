@@ -24,7 +24,11 @@ export default function SignIn() {
     try {
       const response = await authApi.login(formData.email, formData.password);
       if (response.message === "success") {
-        router.push("/Voting-Page/candidates");
+        if(response.data.email === "admin@nevtik.com"){
+          router.push("/Admin/AdminTable");
+        }else{
+          router.push("/Voting-Page");
+        }
       } else {
         setError(response.message);
       }
