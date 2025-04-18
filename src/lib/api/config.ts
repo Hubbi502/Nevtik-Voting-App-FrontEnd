@@ -8,3 +8,11 @@ export type ApiResponse<T> = {
   message: string;
   data: T;
 };
+
+export type ApiResponseUsers<T> = {
+  message: string;
+  data: T;
+  totalPages?: number;
+  currentPage?: number;
+  total?: number;
+};

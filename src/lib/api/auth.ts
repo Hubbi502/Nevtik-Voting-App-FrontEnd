@@ -43,10 +43,15 @@ export const authApi = {
     return response.json();
   },
 
-  getUsers: async () => {
-    const response = await fetch(`${API_BASE_URL}/auth/users`, {
+  getUsers: async (page: number, USERS_PER_PAGE: number) => {
+    const response = await fetch(`${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}`, {
       credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     return response.json() as Promise<ApiResponse<User[]>>;
   },
+
+
 };

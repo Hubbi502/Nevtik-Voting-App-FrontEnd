@@ -10,21 +10,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import type { User } from "@/lib/types";
+import type { ApiResponseUsers } from "@/lib/api/config";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  divisi: string;
-}
+import { authApi } from "@/lib/api";
 
-interface ApiResponse {
-  message: string;
-  data: User[];
-  total: number;
-  currentPage: number;
-  totalPages: number;
-}
 
 const DropdownButton = ({ title, items }: { title: string; items: string[] }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,19 +75,13 @@ export default function AdminTable() {
   const fetchUsers = async (page: number) => {
     try {
       console.log('Fetching page:', page); 
-      const response = await fetch(`http://localhost:5000/auth/users?page=${page}&limit=${USERS_PER_PAGE}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
 
-      const data: ApiResponse = await response.json();
+      const data: ApiResponseUsers<User[]> = await authApi.getUsers(page, USERS_PER_PAGE);
       console.log('API Response:', data); 
 
-      if (response.ok && data.message === "success") {
+      if (data.message === "success") {
         setUsers(data.data);
-        setTotalPages(data.totalPages || Math.ceil(data.total / USERS_PER_PAGE));
+        setTotalPages(data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE));
         setCurrentPage(data.currentPage || page);
       } else {
         throw new Error(data.message || 'Failed to fetch users');
