@@ -42,12 +42,12 @@ export default function VoteCard() {
     if (!selectedCandidate) return;
     try {
       const response = await voteApi.castVote(selectedCandidate.id);
-      if(!response.success) {
+      if(response.message !== "success"){
         alert("Gagal melakukan vote");
         console.log(response)
         return;
       }
-      window.location.href = "/end"; // Adjust the route based on your setup
+        window.location.href = "/end"; // Adjust the route based on your setup
     } catch (error) {
       console.error("Error voting:", error);
     }

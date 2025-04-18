@@ -1,5 +1,7 @@
 "use client";
 import { candidateApi } from "@/lib/api";
+import { ApiResponseWinner } from "@/lib/api/config";
+import { winner } from "@/lib/types";
 import { Bebas_Neue, Playfair_Display, Roboto } from "next/font/google";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -8,24 +10,24 @@ const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400" });
 const roboto = Roboto({ subsets: ["latin"], weight: "700" });
 const playfairDisplay = Playfair_Display({ subsets: ["latin"], weight: "400" });
 
-interface Candidate {
-  name: string;
-  percentage: number;
-  total_votes: number;
-    image: string;
-  division?: string;
-}
 
 export default function CongratsPage() {
-  const [winner, setWinner] = useState<Candidate | null>(null);
+  const [winner, setWinner] = useState<winner | null>(null);
 
   useEffect(() => {
     const fetchWinner = async () => {
-      const response = await candidateApi.getVotePercentages();
-      const candidates: Candidate[] = response.data;
-      if (candidates.length > 0) {
-        const sorted = candidates.sort((a, b) => b.percentage - a.percentage);
-        setWinner(sorted[0]);
+      const response: ApiResponseWinner<winner> = await candidateApi.getVotePercentages();
+      if (response.message === "Pemenang Ditemukan"){
+        const candidates: winner[] = response.data;
+        if (candidates.length > 0) {
+          const sorted = candidates.sort((a, b) => b.percentage - a.percentage);
+          setWinner(sorted[0]);
+        }
+      }else if (response.message === "Seri!"){
+        alert("Terdapat lebih dari 1 kandidat yang memiliki suara terbanyak, silahkan hubungi admin untuk melakukan pemilihan ulang!");
+        window.location.href = "/";
+      }else{
+        console.log(response)
       }
     };
     fetchWinner();
@@ -86,7 +88,7 @@ export default function CongratsPage() {
               {winner.name}
             </text>
             <text x="50%" y="70%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="24" fontFamily="Mono">
-              {winner.division || "Division"}
+              {winner.divisi || "Division"}
             </text>
           </svg>
         </div>
@@ -99,7 +101,7 @@ export default function CongratsPage() {
               <path d="M16.7993 26L23.371 32.25L36.5144 19.75" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="text-[#16A34A]/75 text-[20px] bg-[#DCFCE7] pl-3 flex items-center text-center">
-              Terpilih dengan {winner.total_votes} suara ({Number(winner.percentage).toFixed(1)}%)
+              Terpilih dengan {winner.votes} suara ({Number(winner.percentage).toFixed(1)}%)
             </div>
           </div>
         </div>

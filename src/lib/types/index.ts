@@ -34,3 +34,11 @@ export interface VotePercentage {
   votedPercentage: string;
   notVotedPercentage: string;
 }
+
+export interface winner {
+  name: string;
+  percentage: number;
+  votes: number;
+  image: string;
+  divisi: string;
+}

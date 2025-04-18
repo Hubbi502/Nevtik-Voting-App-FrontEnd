@@ -18,7 +18,7 @@ export default function MainComp() {
             </p>
             <div className="mt-10">
               <a 
-                href="/Voting-Page" 
+                href="/signIn" 
                 className="w-full h-full p-4 bg-red-500 rounded-xl text-white text-2xl hover:bg-amber-50 hover:text-black ease-in duration-300" 
                 style={{ fontFamily: "Times New Roman, serif" }}
               >

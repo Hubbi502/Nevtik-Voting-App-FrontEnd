@@ -16,3 +16,8 @@ export type ApiResponseUsers<T> = {
   currentPage?: number;
   total?: number;
 };
+
+export type ApiResponseWinner<T> = {
+  message: string;
+  data: T[]
+}
