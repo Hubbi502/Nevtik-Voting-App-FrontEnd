@@ -25,10 +25,10 @@ export default function SignIn() {
       const response = await authApi.login(formData.email, formData.password);
       if (response.message === "success") {
         if(response.data.email === "admin@nevtik.com"){
-          // router.push("/Admin/AdminTable");
+          router.push("/Admin/AdminTable");
           console.log(response)
         }else{
-          // router.push("/Voting-Page");
+          router.push("/Voting-Page");
           console.log(response)
         }
       } else {
