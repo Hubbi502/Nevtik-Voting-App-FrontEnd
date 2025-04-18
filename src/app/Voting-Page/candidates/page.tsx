@@ -8,19 +8,25 @@ import Tabs from "@/components/Tab";
 import { useCandidate } from "@/lib/hooks/useCandidate";
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from "react";
+import React, { Suspense } from "react";
+
+const SearchParamsWrapper = ({ setCurrentPage }: { setCurrentPage: (page: number) => void }) => {
+  const searchParams = useSearchParams();
+  const page = searchParams.get('page');
+
+  useEffect(() => {
+    if (page) {
+      setCurrentPage(Number(page));
+    }
+  }, [page, setCurrentPage]);
+
+  return null;
+};
 
 const CandidatesPage = () => {
   const { candidates, loading, error } = useCandidate();
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = candidates.length;
-  const searchParams = useSearchParams();
-  const page = searchParams.get('page');
-  
-  useEffect(() => {
-    if (page) {
-      setCurrentPage(Number(page));
-    }
-  },[])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -43,7 +49,9 @@ const CandidatesPage = () => {
 
   return (
     <div className='h-screen'>
-      <Menu />
+      <Suspense fallback={<div>Loading...</div>}>
+        <SearchParamsWrapper setCurrentPage={setCurrentPage} />
+      </Suspense>
       <div className='flex mt-12 items-center gap-30 justify-center '>
         <div>
           <BiodataCard
