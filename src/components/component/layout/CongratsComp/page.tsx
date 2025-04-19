@@ -1,5 +1,7 @@
 "use client";
 import { candidateApi } from "@/lib/api";
+import { ApiResponse } from "@/lib/api/config";
+import type { WinnerCandidates as Candidate } from "@/lib/types";
 import { Bebas_Neue, Playfair_Display, Roboto } from "next/font/google";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -7,9 +9,6 @@ import { useEffect, useState } from "react";
 const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400" });
 const roboto = Roboto({ subsets: ["latin"], weight: "700" });
 const playfairDisplay = Playfair_Display({ subsets: ["latin"], weight: "400" });
-import type { WinnerCandidates as Candidate } from "@/lib/types";
-import { ApiResponse } from "@/lib/api/config";
-
 
 export default function CongratsPage() {
   const [winner, setWinner] = useState<Candidate | null>(null);
@@ -18,11 +17,14 @@ export default function CongratsPage() {
   useEffect(() => {
     const fetchWinner = async () => {
       const response: ApiResponse<Candidate[]> = await candidateApi.getWinner();
-      if (response.message === "draw"){
+      console.log(response);
+      let draw = false;
+      if (response.message === "draw") {
+        draw = true;
         setIsDraw(true);
-        return;
       }
       const candidates: Candidate[] = response.data;
+      console.log("isdraw = " + draw);
       if (candidates.length > 0) {
         const sorted = candidates.sort((a, b) => b.percentage - a.percentage);
         setWinner(sorted[0]);
@@ -44,10 +46,12 @@ export default function CongratsPage() {
           <img src="/logo-rmv.png" alt="" width={60} height={60} />
           <div className="flex mt-2 flex-col text-center">
             <span className={`text-5xl font-bold ${roboto.className}`}>
-              SELAMAT
+              {isDraw ? "SERI" : "SELAMAT"}
             </span>
-            <span className={`text-2xl font-light ${playfairDisplay.className}`}>
-              Atas Terpilihnya
+            <span
+              className={`text-2xl font-light ${playfairDisplay.className}`}
+            >
+              {isDraw ? "" : "Atas Terpilihnya"}
             </span>
           </div>
         </div>
@@ -60,19 +64,27 @@ export default function CongratsPage() {
             className={`text-8xl font-mono font-bold absolute z-3 bottom-2 left-8 ${bebasNeue.className}`}
             style={{ transform: "skewX(10deg)" }}
           >
-            Congratulation
+            {isDraw ? "DRAW" : "CONGRATULATION"}
           </span>
           <span
             className={`text-8xl font-mono font-bold text-white/0 absolute -bottom-4 left-7 text-shadow text-outline z-6 ${bebasNeue.className}`}
             style={{ WebkitTextStroke: "1px black", transform: "skewX(10deg)" }}
           >
-            Congratulation
+            {isDraw ? "DRAW" : "CONGRATULATION"}
           </span>
         </div>
         <div className="relative -left-2 z-10 -top-4 flex">
-          {winner.image && (
-            <Image src={String(winner.image)} alt="confetti" width={450} height={450} className="mx-auto" />
-          )}
+          {isDraw
+            ? ""
+            : winner.image && (
+                <Image
+                  src={String(winner.image)}
+                  alt="confetti"
+                  width={450}
+                  height={450}
+                  className="mx-auto"
+                />
+              )}
         </div>
         <div className="bg-[#C21010] w-full h-44 rounded-tr-[6rem] rounded-tl-[6rem] absolute bottom-0 left-0"></div>
       </div>
@@ -80,34 +92,88 @@ export default function CongratsPage() {
       {/* Banner Nama & Division */}
       <div className="flex justify-center items-center relative">
         <div className="absolute bottom-40 z-10">
-          <svg width="1106" height="119" viewBox="0 0 1106 119" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 0H1106L1053 61L1106 119H0L71.5 61L0 0Z" fill="#D84040" />
-            <text x="50%" y="35%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="44" fontFamily="Mono" fontWeight="bold">
-              {winner.name}
+          <svg
+            width="1106"
+            height="119"
+            viewBox="0 0 1106 119"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full"
+          >
+            <path
+              d="M0 0H1106L1053 61L1106 119H0L71.5 61L0 0Z"
+              fill="#D84040"
+            />
+            <text
+              x="50%"
+              y="35%"
+              dominantBaseline="middle"
+              textAnchor="middle"
+              fill="white"
+              fontSize="44"
+              fontFamily="Mono"
+              fontWeight="bold"
+            >
+              {isDraw ? "Draw" : winner.name}
             </text>
-            <text x="50%" y="70%" dominantBaseline="middle" textAnchor="middle" fill="white" fontSize="24" fontFamily="Mono">
-              {winner.division || "Division"}
+            <text
+              x="50%"
+              y="70%"
+              dominantBaseline="middle"
+              textAnchor="middle"
+              fill="white"
+              fontSize="24"
+              fontFamily="Mono"
+            >
+              {isDraw ? "" : winner.division || "Division"}
             </text>
           </svg>
         </div>
 
         {/* Box info jumlah suara */}
-        <div className="relative bottom-[115px] flex justify-center items-center flex-row">
-          <div className="absolute border-1 rounded-3xl px-12 py-3 w-[30rem] bg-[#DCFCE7] flex justify-around border-black/25 text-center">
-            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M26 1L32.9042 5.79L41.4513 5.775L44.0761 13.51L51 18.275L48.3437 26L51 33.725L44.0761 38.49L41.4513 46.225L32.9042 46.21L26 51L19.0958 46.21L10.5487 46.225L7.92393 38.49L1 33.725L3.65627 26L1 18.275L7.92393 13.51L10.5487 5.775L19.0958 5.79L26 1Z" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M16.7993 26L23.371 32.25L36.5144 19.75" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <div className="text-[#16A34A]/75 text-[20px] bg-[#DCFCE7] pl-3 flex items-center text-center">
-              Terpilih dengan suara ({Number(winner.percentage).toFixed(1)}%)
+        {isDraw ? (
+          ""
+        ) : (
+          <div className="relative bottom-[115px] flex justify-center items-center flex-row">
+            <div className="absolute border-1 rounded-3xl px-12 py-3 w-[30rem] bg-[#DCFCE7] flex justify-around border-black/25 text-center">
+              <svg
+                width="52"
+                height="52"
+                viewBox="0 0 52 52"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M26 1L32.9042 5.79L41.4513 5.775L44.0761 13.51L51 18.275L48.3437 26L51 33.725L44.0761 38.49L41.4513 46.225L32.9042 46.21L26 51L19.0958 46.21L10.5487 46.225L7.92393 38.49L1 33.725L3.65627 26L1 18.275L7.92393 13.51L10.5487 5.775L19.0958 5.79L26 1Z"
+                  stroke="#16A34A"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M16.7993 26L23.371 32.25L36.5144 19.75"
+                  stroke="#16A34A"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="text-[#16A34A]/75 text-[20px] bg-[#DCFCE7] pl-3 flex items-center text-center">
+                Terpilih dengan suara ({Number(winner.percentage).toFixed(1)}%)
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Tombol kembali */}
         <div className="absolute bottom-10 left-24">
           <div className="p-4 px-12 rounded-xl hover:bg-white hover:text-black ease-in duration-300 cursor-pointer border-1 border-white bg-[#E64848] text-white">
-            <button onClick={() => window.location.href = "/"} className="text-xl font-mono">Kembali</button>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="text-xl font-mono"
+            >
+              Kembali
+            </button>
           </div>
         </div>
       </div>
