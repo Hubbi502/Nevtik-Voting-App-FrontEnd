@@ -42,3 +42,10 @@ export interface CurrentUser {
   name: string;
   role: 'USER' | 'ADMIN';
 }
+
+export interface WinnerCandidates {
+  name: string;
+  percentage: number;
+    image: string;
+  division?: string;
+}

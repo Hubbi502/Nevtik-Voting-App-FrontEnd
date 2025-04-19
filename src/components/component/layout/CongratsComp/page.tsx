@@ -7,21 +7,21 @@ import { useEffect, useState } from "react";
 const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400" });
 const roboto = Roboto({ subsets: ["latin"], weight: "700" });
 const playfairDisplay = Playfair_Display({ subsets: ["latin"], weight: "400" });
+import type { WinnerCandidates as Candidate } from "@/lib/types";
+import { ApiResponse } from "@/lib/api/config";
 
-interface Candidate {
-  name: string;
-  percentage: number;
-  total_votes: number;
-    image: string;
-  division?: string;
-}
 
 export default function CongratsPage() {
   const [winner, setWinner] = useState<Candidate | null>(null);
+  const [isDraw, setIsDraw] = useState(false);
 
   useEffect(() => {
     const fetchWinner = async () => {
-      const response = await candidateApi.getVotePercentages();
+      const response: ApiResponse<Candidate[]> = await candidateApi.getWinner();
+      if (response.message === "draw"){
+        setIsDraw(true);
+        return;
+      }
       const candidates: Candidate[] = response.data;
       if (candidates.length > 0) {
         const sorted = candidates.sort((a, b) => b.percentage - a.percentage);
@@ -99,7 +99,7 @@ export default function CongratsPage() {
               <path d="M16.7993 26L23.371 32.25L36.5144 19.75" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <div className="text-[#16A34A]/75 text-[20px] bg-[#DCFCE7] pl-3 flex items-center text-center">
-              Terpilih dengan {winner.total_votes} suara ({Number(winner.percentage).toFixed(1)}%)
+              Terpilih dengan suara ({Number(winner.percentage).toFixed(1)}%)
             </div>
           </div>
         </div>
