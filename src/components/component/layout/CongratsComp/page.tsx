@@ -3,7 +3,6 @@ import { candidateApi } from "@/lib/api";
 import { ApiResponseWinner } from "@/lib/api/config";
 import { winner } from "@/lib/types";
 import { Bebas_Neue, Playfair_Display, Roboto } from "next/font/google";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const bebasNeue = Bebas_Neue({ subsets: ["latin"], weight: "400" });
@@ -73,7 +72,7 @@ export default function CongratsPage() {
         </div>
         <div className="relative -left-2 z-10 -top-4 flex">
           {winner.image && (
-            <Image src={String(winner.image)} alt="confetti" width={450} height={450} className="mx-auto" />
+            <img src={String(winner.image)} alt="confetti" className="mx-auto" />
           )}
         </div>
         <div className="bg-[#C21010] w-full h-44 rounded-tr-[6rem] rounded-tl-[6rem] absolute bottom-0 left-0"></div>
