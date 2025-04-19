@@ -35,10 +35,10 @@ export interface VotePercentage {
   notVotedPercentage: string;
 }
 
-export interface winner {
+export interface CurrentUser {
+  message?:string;
+  id: string;
+  email: string;
   name: string;
-  percentage: number;
-  votes: number;
-  image: string;
-  divisi: string;
+  role: 'USER' | 'ADMIN';
 }

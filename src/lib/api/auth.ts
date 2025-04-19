@@ -1,5 +1,5 @@
 import { API_BASE_URL, defaultHeaders, ApiResponse } from './config';
-import { User } from '../types';
+import { User, CurrentUser } from '../types';
 
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -19,14 +19,14 @@ export const authApi = {
     return response.json();
   },
 
-  register: async (userData: {
+  addUser: async (userData: {
     name: string;
     email: string;
     password: string;
     divisi: string;
     role: 'USER' | 'ADMIN';
   }) => {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/auth/addUser`, {
       method: 'POST',
       headers: defaultHeaders,
       credentials: 'include',
@@ -52,6 +52,15 @@ export const authApi = {
     });
     return response.json() as Promise<ApiResponse<User[]>>;
   },
+
+  getCurrentUser: async () => {
+    const response = await fetch(`${API_BASE_URL}/auth/user`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: defaultHeaders,
+    });
+    return response.json() as Promise<CurrentUser>;
+  }
 
 
 };

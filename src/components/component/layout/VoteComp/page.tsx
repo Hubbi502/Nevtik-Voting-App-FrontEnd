@@ -42,12 +42,12 @@ export default function VoteCard() {
     if (!selectedCandidate) return;
     try {
       const response = await voteApi.castVote(selectedCandidate.id);
-      if(response.message !== "success"){
+      if(response.message !== "success"){ 
         alert("Gagal melakukan vote");
         console.log(response)
         return;
       }
-        window.location.href = "/end"; // Adjust the route based on your setup
+      window.location.href = "/end"; // Adjust the route based on your setup
     } catch (error) {
       console.error("Error voting:", error);
     }
@@ -105,11 +105,12 @@ export default function VoteCard() {
   );
 }
 
+
 function CandidateCard({ candidate, openModal }: { candidate: Candidate; openModal: (candidate: Candidate) => void }) {
   return (
     <>   
-      <div className=" h-full w-96 text-center flex flex-col flex-wrap">
-        <div className="bg-[#E64848] rounded-tr-lg rounded-tl-lg flex justify-between p-7 z-6 py-4 text-white">
+      <div className=" w-96 text-center flex flex-col flex-wrap">
+        <div className="bg-[#E64848] rounded-tr-lg rounded-tl-lg flex justify-between p-7 py-4 text-white">
           <div className="flex justify-between">
             <svg xmlns="http://www.w3.org/2000/svg" width={26} height={26} viewBox="0 0 24 24" className="text-[#f7cccc] "><path fill="currentColor" d="M12 5.9a2.1 2.1 0 1 1 0 4.2a2.1 2.1 0 0 1 0-4.2m0 9c2.97 0 6.1 1.46 6.1 2.1v1.1H5.9V17c0-.64 3.13-2.1 6.1-2.1M12 4C9.79 4 8 5.79 8 8s1.79 4 4 4s4-1.79 4-4s-1.79-4-4-4m0 9c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4"></path></svg>
             <h1 className="text-xl font-semibold  font-sans text-white pl-3 ">{candidate.name}</h1>
@@ -117,7 +118,7 @@ function CandidateCard({ candidate, openModal }: { candidate: Candidate; openMod
           <span className="text-[18px] font-thin text-white">{candidate.divisi}</span>
         </div>
         <div className=" text-center flex-wrap flex-col justify-center ">
-            <img src={candidate.image || "/pino.png"} alt={candidate.name}  className="w-full mb-9 rounded-br-lg rounded-bl-lg" />
+            <Image src={candidate.image || "/pino.png"} alt={candidate.name} width={300} height={300} className="w-full h-[387px] object-cover object-center mb-9 rounded-br-lg rounded-bl-lg"/>
               <div className="relative">
                  <div className="absolute bg-white cursor-pointer border hover:rotate-180  duration-300 ease-in-out border-black/25 p-2 rounded-full -top-24 right-2 ">
                     <a href={candidate.href} className=""><svg width="23" height="20" viewBox="0 0 23 20" fill="none" className="" xmlns="http://www.w3.org/2000/svg">
@@ -127,7 +128,7 @@ function CandidateCard({ candidate, openModal }: { candidate: Candidate; openMod
                  </div>
               </div>
         </div>
-          <div className="mt-32 items-center py-3 ">
+          <div className=" items-center  ">
             <button
               onClick={() => openModal(candidate)}
               className="rounded-lg hover:bg-white  hover:text-black duration-300 border right-1/4 bg-red-800 w-full py-2 text-white cursor-pointer"
