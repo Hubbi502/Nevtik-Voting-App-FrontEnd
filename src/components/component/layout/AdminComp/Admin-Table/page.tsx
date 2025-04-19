@@ -1,7 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -10,9 +8,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type { User } from "@/lib/types";
 import type { ApiResponseUsers } from "@/lib/api/config";
+import type { User } from "@/lib/types";
+import { Menu } from "lucide-react";
 import { Jersey_10 } from "next/font/google";
+import { useEffect, useState } from "react";
 
 import { authApi } from "@/lib/api";
 const jersey10 = Jersey_10({
@@ -119,6 +119,24 @@ export default function AdminTable() {
     } catch (error) {
       console.error("Create error:", error);
       alert("Failed to create user.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this user?")) {
+      console.log(id);
+      try {
+        const res = await authApi.deleteUser(id);
+        if (res.message === "success") {
+          fetchUsers(currentPage);
+          return;
+        } else {
+          alert("Error deleting user: " + res.message);
+        }
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Failed to delete user.");
+      }
     }
   };
 
@@ -235,7 +253,7 @@ export default function AdminTable() {
                       <span>{user.email}</span>
                       <span>{user.divisi}</span>
                       <div className="pl-3 text-red-800">
-                        <button onClick={() => console.log("Delete user", user.id)}>
+                        <button onClick={() => handleDelete(user.id)}>
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width={30}

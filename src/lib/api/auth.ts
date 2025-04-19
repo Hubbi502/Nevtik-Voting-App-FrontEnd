@@ -60,7 +60,19 @@ export const authApi = {
       headers: defaultHeaders,
     });
     return response.json() as Promise<CurrentUser>;
-  }
+  },
+
+  deleteUser: async (userId: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/deleteUser`, {
+      method: 'DELETE',
+      headers: defaultHeaders,
+      credentials: 'include',
+      body: JSON.stringify({ 
+        id : userId
+      }),
+    });
+    return response.json() as Promise<ApiResponse<User>>;
+  },
 
 
 };
