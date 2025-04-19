@@ -113,6 +113,7 @@ export default function AdminTable() {
     // console.log("Create user response:", formData);
       if (res.message === "User berhasil ditambahkan") {
         fetchUsers(currentPage); 
+        setIsModalOpen(false); // Close the modal after successful creation
       } else {
         alert("Error creating user: " + res.message);
       }
