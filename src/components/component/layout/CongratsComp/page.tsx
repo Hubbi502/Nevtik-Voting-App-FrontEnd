@@ -16,7 +16,7 @@ export default function CongratsPage() {
 
   useEffect(() => {
     const fetchWinner = async () => {
-      const response: ApiResponseWinner<winner> = await candidateApi.getVotePercentages();
+      const response: ApiResponseWinner<winner> = await candidateApi.getWinner();
       if (response.message === "Pemenang Ditemukan"){
         const candidates: winner[] = response.data;
         if (candidates.length > 0) {
