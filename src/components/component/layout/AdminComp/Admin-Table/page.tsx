@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/pagination";
 import type { ApiResponseUsers } from "@/lib/api/config";
 import type { User } from "@/lib/types";
-import { Menu } from "lucide-react";
 import { Jersey_10 } from "next/font/google";
 import { useEffect, useState } from "react";
 
@@ -23,35 +22,42 @@ const jersey10 = Jersey_10({
 const DropdownButton = ({
   title,
   items,
+  currentPage,
+  onChange
 }: {
   title: string;
   items: string[];
+  currentPage: number;
+  onChange?: (selected: string) => void;
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+  const [selected, setSelected] = useState("");
+  useEffect(()=>{
+    if (onChange) {
+      onChange(selected);
+    }
+    console.log("Selected:", selected);
+  },[selected])
   return (
-    <div className="relative mx-2 inline-block text-left text-black ">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between border-none duration-200 ease-in cursor-pointer bg-white border  border-black px-6 py-2 rounded-2xl shadow-sm hover:bg-gray-100 w-40"
+    <div className="relative mx-2 inline-block text-left text-black">
+      <select
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className="flex items-center justify-between border-none duration-200 ease-in cursor-pointer bg-white border border-black px-6 py-2 rounded-2xl shadow-sm hover:bg-gray-100 w-40 appearance-none"
       >
-        {title}
-        <Menu className="w-5 h-5 text-red-500 ml-2 " />
-      </button>
+        <option value="" disabled hidden>
+          {title}
+        </option>
+        {items.map((item, index) => (
+          <option key={index} value={item}>
+            {item}
+          </option>
+        ))}
+      </select>
 
-      {isOpen && (
-        <div className="absolute left-0 w-40 bg-white border border-gray-200 rounded-lg shadow-md z-10">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer "
-              onClick={() => setIsOpen(false)}
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Icon panah custom biar kayak Menu (bisa pake SVG langsung juga) */}
+      <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 text-red-500">
+        ▼
+      </div>
     </div>
   );
 };
@@ -83,6 +89,9 @@ export default function AdminTable() {
   const [error, setError] = useState("");
   const USERS_PER_PAGE = 5;
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [selectedDivisi, setSelectedDivisi] = useState("all");
+  const [selectedVoteStatus, setSelectedVoteStatus] = useState("all");
 
   const [formData, setFormData] = useState<{
     name: string;
@@ -143,15 +152,18 @@ export default function AdminTable() {
 
   const handleModalToggle = () => {
     setIsModalOpen(!isModalOpen);
+
   };
 
-  const fetchUsers = async (page: number) => {
+  const fetchUsers = async (page: number, selectedDivisi:string = "all", isVoted:string= "all" , USERS_PER_PAGE:number = 5) => {
     try {
       console.log("Fetching page:", page);
 
       const data: ApiResponseUsers<User[]> = await authApi.getUsers(
         page,
-        USERS_PER_PAGE
+        USERS_PER_PAGE,
+        isVoted,
+        selectedDivisi
       );
       console.log("API Response:", data);
 
@@ -173,8 +185,16 @@ export default function AdminTable() {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage]);
+    if(selectedDivisi === "" && selectedVoteStatus === ""){
+      fetchUsers(currentPage);
+    }else  if (selectedDivisi !== "" && selectedVoteStatus === ""){
+      fetchUsers(currentPage, selectedDivisi);
+    }else  if (selectedDivisi === "" && selectedVoteStatus !== ""){
+      fetchUsers(currentPage, "all", selectedVoteStatus);
+    }else{
+      fetchUsers(currentPage, selectedDivisi, selectedVoteStatus);
+    }
+  }, [currentPage, selectedDivisi, selectedVoteStatus]);
 
   // Create array of page numbers safely
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -198,10 +218,18 @@ export default function AdminTable() {
               className="text-black bg-white mt-8 w-full p-3 border border-black rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex justify-between ml-12 mt-9">
-              <DropdownButton title="Status" items={["Vote", "Not Vote"]} />
+              <DropdownButton title="Status" items={["Vote", "Not Vote"]} currentPage={currentPage} onChange={(value)=>{
+                console.log(value);
+                setSelectedVoteStatus(value);
+              }}/>
               <DropdownButton
                 title="Filter"
-                items={["ITNSA", "Web Developer", "Cyber Security"]}
+                items={["ITNSA", "Web Development", "Cyber Security"]}
+                currentPage={currentPage}
+                onChange={(value)=>{
+                  console.log(value);
+                  setSelectedDivisi(value);
+                }}
               />
               <a
                 onClick={handleModalToggle}
@@ -224,11 +252,12 @@ export default function AdminTable() {
         </div>
 
         <div className="container pt-6 px-2">
-          <div className="grid grid-cols-5 bg-white/85 text-black p-3 py-2 rounded-lg font-semibold">
+          <div className="grid grid-cols-6 bg-white/85 text-black p-3 py-2 rounded-lg font-semibold">
             <span>No</span>
             <span>Nama</span>
             <span>Email</span>
             <span>Divisions</span>
+            <span>Vote Status</span>
             <span>Action</span>
           </div>
 
@@ -245,7 +274,7 @@ export default function AdminTable() {
                   users.map((user, index) => (
                     <div
                       key={user.id}
-                      className="grid grid-cols-5 bg-white px-3 py-6 rounded-lg shadow-lg items-center"
+                      className="grid grid-cols-6 bg-white px-3 py-6 rounded-lg shadow-lg items-center"
                     >
                       <span className="font-semibold">
                         {(currentPage - 1) * USERS_PER_PAGE + index + 1}.
@@ -253,6 +282,11 @@ export default function AdminTable() {
                       <span className="font-semibold">{user.name}</span>
                       <span>{user.email}</span>
                       <span>{user.divisi}</span>
+                      <span>{user.vote ? (
+                        <div className="h-8 w-8 bg-green-500 rounded-3xl "></div>
+                      ) :(
+                        <div className="h-8 w-8 bg-red-500 rounded-3xl "></div>
+                      )}</span>
                       <div className="pl-3 text-red-800">
                         <button onClick={() => handleDelete(user.id)}>
                           <svg

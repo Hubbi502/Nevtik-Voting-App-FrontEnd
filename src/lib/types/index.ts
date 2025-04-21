@@ -3,6 +3,12 @@ export interface User {
   email: string;
   name: string;
   divisi: string;
+  vote? : {
+    id: string;
+    userId: string;
+    candidateId: string;
+    createdAt: string;
+  };
 }
 
 export interface Candidate {
