@@ -47,8 +47,8 @@ export default function SignIn() {
   };
 
   return (
-    <div className='bg-gradient-to-b from-red-800 to-red-400 flex items-center justify-center h-screen my-auto '>
-      <div>
+    <div className='bg-gradient-to-b from-red-800 to-red-400 flex justify-center h-screen'>
+      <div className='my-10'>
         <Image
           src={"assets/banner.svg"}
           alt='banner'
@@ -56,7 +56,7 @@ export default function SignIn() {
           height={100}
         />
       </div>
-      <div className='w-135 bg-white h-142 rounded-tr-4xl rounded-br-4xl justify-center items-center'>
+      <div className='w-135 bg-white h-142.5 rounded-tr-4xl rounded-br-4xl justify-center my-14.25'>
         <div className='mt-6 flex items-center justify-center'>
           <Image
             src={"/assets/nevtik1.svg"}
