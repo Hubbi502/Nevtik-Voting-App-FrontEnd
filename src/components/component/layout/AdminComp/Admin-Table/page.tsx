@@ -106,9 +106,8 @@ export default function AdminTable() {
   const handleSubmitCreate: (formData: formDataInterface) => Promise<void> = async (formData: formDataInterface) => {
     try {
       const res = await authApi.addUser(formData);
-      // console.log("Create user response:", formData);
       if (res.message === "User berhasil ditambahkan") {
-        fetchUsers(currentPage);
+        await fetchUsers(currentPage); // Refetch after cache is cleared
         setIsModalOpen({open:false, state:"create"}); // Close the modal after successful creation
       } else {
         alert("Error creating user: " + res.message);
@@ -120,10 +119,8 @@ export default function AdminTable() {
   };
 
   const handleSubmitEdit: (userId:string,formData: formDataInterface) => Promise<void> = async (userId:string,formData: formDataInterface) => {
-    // console.log(formData)
     try {
       const res = await authApi.editUser(userId,formData);
-      // console.log("Create user response:", formData);
       if (res.message === "success") {
         fetchUsers(currentPage);
         setIsModalOpen({open:false, state:"edit"}); // Close the modal after successful creation
@@ -142,7 +139,7 @@ export default function AdminTable() {
       try {
         const res = await authApi.deleteUser(id);
         if (res.message === "success") {
-          fetchUsers(currentPage);
+          await fetchUsers(currentPage); // Refetch after cache is cleared
           return;
         } else {
           alert("Error deleting user: " + res.message);
@@ -322,7 +319,7 @@ export default function AdminTable() {
                             >
                               <path
                                 fill="currentColor"
-                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128m89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9l1.2-11.1l7.9-7.9l77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5m45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8l137.9-137.9l-71.7-71.7zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8l-4.1 4.1l71.8 71.7l41.8-41.8c9.3-9.4 9.3-24.5 0-33.9"
+                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128m89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9l1.2-11.1l7.9-7.9l77.3-77.3c-24.5-27.7-60-45.5m45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8l137.9-137.9l-71.7-71.7zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8l-4.1 4.1l71.8 71.7l41.8-41.8c9.3-9.4 9.3-24.5 0-33.9"
                               />
                             </svg>
                           </button>
