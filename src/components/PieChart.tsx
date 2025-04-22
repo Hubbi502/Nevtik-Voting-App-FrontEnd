@@ -66,7 +66,7 @@ const PieChart: React.FC = () => {
 
   return (
     <div className="flex mt-4 items-center justify-center p-4">
-      <Pie data={data}  />
+      {/* <Pie data={data}  /> */}
       {labels.length > 0 && persen.length > 0 ? (
         <Pie data={data} options={options} />
       ) : (
