@@ -12,6 +12,7 @@ import type { ApiResponseUsers } from "@/lib/api/config";
 import type { User } from "@/lib/types";
 import { Jersey_10 } from "next/font/google";
 import { useEffect, useState } from "react";
+import Modal from "./modal";
 
 import { authApi } from "@/lib/api";
 const jersey10 = Jersey_10({
@@ -23,7 +24,7 @@ const DropdownButton = ({
   title,
   items,
   currentPage,
-  onChange
+  onChange,
 }: {
   title: string;
   items: string[];
@@ -31,12 +32,12 @@ const DropdownButton = ({
   onChange?: (selected: string) => void;
 }) => {
   const [selected, setSelected] = useState("");
-  useEffect(()=>{
+  useEffect(() => {
     if (onChange) {
       onChange(selected);
     }
     console.log("Selected:", selected);
-  },[selected])
+  }, [selected]);
   return (
     <div className="relative mx-2 inline-block text-left text-black">
       <select
@@ -66,7 +67,7 @@ const getPaginationRange = (currentPage: number, totalPages: number) => {
   const delta = 2;
   const range: (number | string)[] = [];
 
-  for (let i = 1; i <= totalPages; i++) {
+  for (let i:number = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
       i === totalPages ||
@@ -87,42 +88,28 @@ export default function AdminTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userData, setUserData] = useState<User | undefined>(undefined);
   const USERS_PER_PAGE = 5;
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState<{open:boolean, state: "edit"|"create"}>({open:false, state:"create"});
 
   const [selectedDivisi, setSelectedDivisi] = useState("all");
   const [selectedVoteStatus, setSelectedVoteStatus] = useState("all");
 
-  const [formData, setFormData] = useState<{
+  interface formDataInterface {
     name: string;
     email: string;
     divisi: string;
     password: string;
     role: "USER" | "ADMIN";
-  }>({
-    name: "",
-    email: "",
-    divisi: "",
-    password: "",
-    role: "USER",
-  });
+  }
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const handleSubmitCreate: (formData: formDataInterface) => Promise<void> = async (formData: formDataInterface) => {
     try {
-    const res = await authApi.addUser(formData);
-    // console.log("Create user response:", formData);
+      const res = await authApi.addUser(formData);
+      // console.log("Create user response:", formData);
       if (res.message === "User berhasil ditambahkan") {
-        fetchUsers(currentPage); 
-        setIsModalOpen(false); // Close the modal after successful creation
+        fetchUsers(currentPage);
+        setIsModalOpen({open:false, state:"create"}); // Close the modal after successful creation
       } else {
         alert("Error creating user: " + res.message);
       }
@@ -131,6 +118,23 @@ export default function AdminTable() {
       alert("Failed to create user.");
     }
   };
+
+  const handleSubmitEdit: (userId:string,formData: formDataInterface) => Promise<void> = async (userId:string,formData: formDataInterface) => {
+    // console.log(formData)
+    try {
+      const res = await authApi.editUser(userId,formData);
+      // console.log("Create user response:", formData);
+      if (res.message === "success") {
+        fetchUsers(currentPage);
+        setIsModalOpen({open:false, state:"edit"}); // Close the modal after successful creation
+      } else {
+        alert("Error creating user: " + res.message);
+      }
+    } catch (error) {
+      console.error("Create error:", error);
+      alert("Failed to create user.");
+    }
+  }
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this user?")) {
@@ -150,12 +154,12 @@ export default function AdminTable() {
     }
   };
 
-  const handleModalToggle = () => {
-    setIsModalOpen(!isModalOpen);
-
-  };
-
-  const fetchUsers = async (page: number, selectedDivisi:string = "all", isVoted:string= "all" , USERS_PER_PAGE:number = 5) => {
+  const fetchUsers = async (
+    page: number,
+    selectedDivisi: string = "all",
+    isVoted: string = "all",
+    USERS_PER_PAGE: number = 5
+  ) => {
     try {
       console.log("Fetching page:", page);
 
@@ -185,15 +189,10 @@ export default function AdminTable() {
   };
 
   useEffect(() => {
-    if(selectedDivisi === "" && selectedVoteStatus === ""){
-      fetchUsers(currentPage);
-    }else  if (selectedDivisi !== "" && selectedVoteStatus === ""){
-      fetchUsers(currentPage, selectedDivisi);
-    }else  if (selectedDivisi === "" && selectedVoteStatus !== ""){
-      fetchUsers(currentPage, "all", selectedVoteStatus);
-    }else{
-      fetchUsers(currentPage, selectedDivisi, selectedVoteStatus);
-    }
+    const divisi = selectedDivisi || "all";
+    const voteStatus = selectedVoteStatus || undefined;
+
+    fetchUsers(currentPage, divisi, voteStatus);
   }, [currentPage, selectedDivisi, selectedVoteStatus]);
 
   // Create array of page numbers safely
@@ -218,21 +217,26 @@ export default function AdminTable() {
               className="text-black bg-white mt-8 w-full p-3 border border-black rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex justify-between ml-12 mt-9">
-              <DropdownButton title="Status" items={["Vote", "Not Vote"]} currentPage={currentPage} onChange={(value)=>{
-                console.log(value);
-                setSelectedVoteStatus(value);
-              }}/>
+              <DropdownButton
+                title="Status"
+                items={["Vote", "Not Vote"]}
+                currentPage={currentPage}
+                onChange={(value) => {
+                  console.log(value);
+                  setSelectedVoteStatus(value);
+                }}
+              />
               <DropdownButton
                 title="Filter"
                 items={["ITNSA", "Web Development", "Cyber Security"]}
                 currentPage={currentPage}
-                onChange={(value)=>{
+                onChange={(value) => {
                   console.log(value);
                   setSelectedDivisi(value);
                 }}
               />
               <a
-                onClick={handleModalToggle}
+                onClick={()=>{setIsModalOpen({open: !isModalOpen.open, state: "create" })}}
                 className="rounded-full p-2 hover:bg-black hover:text-white duration-300 ease-in mx-4 bg-white cursor-pointer"
               >
                 <svg
@@ -282,25 +286,47 @@ export default function AdminTable() {
                       <span className="font-semibold">{user.name}</span>
                       <span>{user.email}</span>
                       <span>{user.divisi}</span>
-                      <span>{user.vote ? (
-                        <div className="h-8 w-8 bg-green-500 rounded-3xl "></div>
-                      ) :(
-                        <div className="h-8 w-8 bg-red-500 rounded-3xl "></div>
-                      )}</span>
-                      <div className="pl-3 text-red-800">
-                        <button onClick={() => handleDelete(user.id)}>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width={30}
-                            height={30}
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M6 7H5v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7zm4 12H8v-9h2zm6 0h-2v-9h2zm.618-15L15 2H9L7.382 4H3v2h18V4z"
-                            ></path>
-                          </svg>
-                        </button>
+                      <span>
+                        {user.vote ? (
+                          <div className="h-8 w-8 bg-green-500 rounded-3xl "></div>
+                        ) : (
+                          <div className="h-8 w-8 bg-red-500 rounded-3xl "></div>
+                        )}
+                      </span>
+                      <div className="pl-3 text-red-800 flex flex-row gap-5">
+                        <div>
+                          <button onClick={() => handleDelete(user.id)}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={30}
+                              height={30}
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M6 7H5v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7zm4 12H8v-9h2zm6 0h-2v-9h2zm.618-15L15 2H9L7.382 4H3v2h18V4z"
+                              ></path>
+                            </svg>
+                          </button>
+                        </div>
+                        <div>
+                          <button onClick={()=>{
+                            setIsModalOpen({open: true, state: "edit" });
+                            setUserData(user)
+                            }}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width={30}
+                              height={30}
+                              viewBox="0 0 640 512"
+                            >
+                              <path
+                                fill="currentColor"
+                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128m89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9l1.2-11.1l7.9-7.9l77.3-77.3c-24.5-27.7-60-45.5-99.9-45.5m45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8l137.9-137.9l-71.7-71.7zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8l-4.1 4.1l71.8 71.7l41.8-41.8c9.3-9.4 9.3-24.5 0-33.9"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -358,136 +384,27 @@ export default function AdminTable() {
         </div>
       </div>
       {/* new user modal*/}
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/25 bg-opacity-50 z-50">
-          <div className="bg-[#FFFDE3] p-6 rounded-lg shadow-lg w-1/3">
-            <div className="relative mb-12">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-0 cursor-pointer"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width={40}
-                  height={40}
-                  viewBox="0 0 512 512"
-                >
-                  <path
-                    fill="currentColor"
-                    fillRule="evenodd"
-                    d="M420.48 121.813L390.187 91.52L256 225.92L121.813 91.52L91.52 121.813L225.92 256L91.52 390.187l30.293 30.293L256 286.08l134.187 134.4l30.293-30.293L286.08 256z"
-                  ></path>
-                </svg>
-              </button>
-            </div>
-            <div className={jersey10.className}>
-              <h2 className="text-6xl tracking-wide mb-4 text-center">
-                Create Account
-              </h2>
-            </div>
-            <form className="px-12 py-4" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-lg mb-2 font-medium text-gray-900"
-                >
-                  Name
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Enter Your Name"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md px-3 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-lg mb-2 font-medium text-gray-900"
-                >
-                  Email
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="Enter Email"
-                    required
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md px-3 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="divisi"
-                  className="block text-lg mb-2 font-medium text-gray-900"
-                >
-                  Division
-                </label>
-                <div className="mt-2">
-                  <select
-                    id="divisi"
-                    name="divisi"
-                    required
-                    value={formData.divisi}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md px-3 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-red-600"
-                  >
-                    <option value="" disabled selected>
-                      Select Division
-                    </option>
-                    <option value="ITNSA">ITNSA</option>
-                    <option value="Cyber Security">Cyber Security</option>
-                    <option value="Web Development">Web Development</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label
-                  htmlFor="password"
-                  className="block text-lg font-medium text-gray-900"
-                >
-                  Password
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="********"
-                    required
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md px-3 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  className="flex my-7 w-full justify-center rounded-md bg-red-800 py-5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {(isModalOpen.open && isModalOpen.state === "create") ? (
+      <Modal 
+      onCloseButton={() => setIsModalOpen({open:false, state:"create"})}
+      state="create"
+      onSubmit={handleSubmitCreate}
+      />
+    ):(isModalOpen.open && isModalOpen.state === "edit") ? (
+      <Modal 
+      onCloseButton={() => setIsModalOpen({open:false, state:"edit"})}
+      state="edit"
+      onSubmit={(formData) => {
+        if (userData?.id) {
+          handleSubmitEdit(userData.id, formData);
+        } else {
+          alert("User ID is undefined. Cannot edit user.");
+        }
+      }}
+      userData={userData}
+      />
+    ):""
+      }
     </div>
   );
 }

@@ -74,5 +74,21 @@ export const authApi = {
     return response.json() as Promise<ApiResponse<User>>;
   },
 
+  editUser: async (userId: string, userData: {
+    name?: string;
+    email?: string;
+    password?: string;
+    divisi?: string;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/auth/user/${userId}`, {
+      method: 'PUT',
+      headers: defaultHeaders,
+      credentials: 'include',
+      body: JSON.stringify({ 
+        ...userData
+      }),
+    });
+    return response.json() as Promise<ApiResponse<User>>;
+  }
 
 };
