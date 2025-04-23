@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import Modal from "./modal";
 
 import { authApi } from "@/lib/api";
+import { cacheUtils } from "@/lib/utils/cache";
 const jersey10 = Jersey_10({
   weight: "400",
   subsets: ["latin"],
@@ -67,7 +68,7 @@ const getPaginationRange = (currentPage: number, totalPages: number) => {
   const delta = 2;
   const range: (number | string)[] = [];
 
-  for (let i:number = 1; i <= totalPages; i++) {
+  for (let i: number = 1; i <= totalPages; i++) {
     if (
       i === 1 ||
       i === totalPages ||
@@ -90,10 +91,28 @@ export default function AdminTable() {
   const [error, setError] = useState("");
   const [userData, setUserData] = useState<User | undefined>(undefined);
   const USERS_PER_PAGE = 5;
-  const [isModalOpen, setIsModalOpen] = useState<{open:boolean, state: "edit"|"create"}>({open:false, state:"create"});
+  const [isModalOpen, setIsModalOpen] = useState<{
+    open: boolean;
+    state: "edit" | "create";
+  }>({ open: false, state: "create" });
 
   const [selectedDivisi, setSelectedDivisi] = useState("all");
   const [selectedVoteStatus, setSelectedVoteStatus] = useState("all");
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+
+  const handleSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+
+    setSortConfig({ key, direction });
+  };
 
   interface formDataInterface {
     name: string;
@@ -103,12 +122,13 @@ export default function AdminTable() {
     role: "USER" | "ADMIN";
   }
 
-  const handleSubmitCreate: (formData: formDataInterface) => Promise<void> = async (formData: formDataInterface) => {
+  const handleSubmitCreate = async (formData: formDataInterface) => {
     try {
       const res = await authApi.addUser(formData);
       if (res.message === "User berhasil ditambahkan") {
-        await fetchUsers(currentPage); // Refetch after cache is cleared
-        setIsModalOpen({open:false, state:"create"}); // Close the modal after successful creation
+        await cacheUtils.clearCache(); // Clear all cache
+        await fetchUsers(currentPage); // Refetch current page
+        setIsModalOpen({ open: false, state: "create" });
       } else {
         alert("Error creating user: " + res.message);
       }
@@ -118,29 +138,29 @@ export default function AdminTable() {
     }
   };
 
-  const handleSubmitEdit: (userId:string,formData: formDataInterface) => Promise<void> = async (userId:string,formData: formDataInterface) => {
+  const handleSubmitEdit = async (userId: string, formData: formDataInterface) => {
     try {
-      const res = await authApi.editUser(userId,formData);
+      const res = await authApi.editUser(userId, formData);
       if (res.message === "success") {
-        fetchUsers(currentPage);
-        setIsModalOpen({open:false, state:"edit"}); // Close the modal after successful creation
+        await cacheUtils.clearCache(); // Clear all cache
+        await fetchUsers(currentPage); // Refetch current page
+        setIsModalOpen({ open: false, state: "edit" });
       } else {
-        alert("Error creating user: " + res.message);
+        alert("Error editing user: " + res.message);
       }
     } catch (error) {
-      console.error("Create error:", error);
-      alert("Failed to create user.");
+      console.error("Edit error:", error);
+      alert("Failed to edit user.");
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this user?")) {
-      console.log(id);
       try {
         const res = await authApi.deleteUser(id);
         if (res.message === "success") {
-          await fetchUsers(currentPage); // Refetch after cache is cleared
-          return;
+          await cacheUtils.clearCache(); // Clear all cache
+          await fetchUsers(currentPage); // Refetch current page
         } else {
           alert("Error deleting user: " + res.message);
         }
@@ -155,28 +175,54 @@ export default function AdminTable() {
     page: number,
     selectedDivisi: string = "all",
     isVoted: string = "all",
-    USERS_PER_PAGE: number = 5
+    USERS_PER_PAGE: number = 6
   ) => {
     try {
       console.log("Fetching page:", page);
 
-      const data: ApiResponseUsers<User[]> = await authApi.getUsers(
+      const cacheKey = cacheUtils.generateCacheKey(
         page,
         USERS_PER_PAGE,
         isVoted,
-        selectedDivisi
+        selectedDivisi,
+        sortConfig?.key,
+        sortConfig?.direction
       );
-      console.log("API Response:", data);
 
-      if (data.message === "success") {
-        setUsers(data.data);
-        setTotalPages(
-          data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
+      // Try to get from cache first
+      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
+        cacheKey
+      );
+
+      if (!data) {
+        // If not in cache, fetch from API
+        data = await authApi.getUsers(
+          page,
+          USERS_PER_PAGE,
+          isVoted,
+          selectedDivisi
         );
-        setCurrentPage(data.currentPage || page);
-      } else {
-        throw new Error(data.message || "Failed to fetch users");
+
+        // Cache the response
+        if (data.message === "success") {
+          await cacheUtils.setCacheData(cacheKey, data);
+        }
       }
+
+      // Apply sorting to the data
+      if (sortConfig && data.data) {
+        data.data = cacheUtils.sortData(
+          data.data,
+          sortConfig.key,
+          sortConfig.direction
+        );
+      }
+
+      setUsers(data.data);
+      setTotalPages(
+        data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
+      );
+      setCurrentPage(data.currentPage || page);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to load users");
@@ -233,7 +279,9 @@ export default function AdminTable() {
                 }}
               />
               <a
-                onClick={()=>{setIsModalOpen({open: !isModalOpen.open, state: "create" })}}
+                onClick={() => {
+                  setIsModalOpen({ open: !isModalOpen.open, state: "create" });
+                }}
                 className="rounded-full p-2 hover:bg-black hover:text-white duration-300 ease-in mx-4 bg-white cursor-pointer"
               >
                 <svg
@@ -255,10 +303,38 @@ export default function AdminTable() {
         <div className="container pt-6 px-2">
           <div className="grid grid-cols-6 bg-white/85 text-black p-3 py-2 rounded-lg font-semibold">
             <span>No</span>
-            <span>Nama</span>
-            <span>Email</span>
-            <span>Divisions</span>
-            <span>Vote Status</span>
+            <span
+              onClick={() => handleSort("name")}
+              className="cursor-pointer hover:text-red-600"
+            >
+              Nama{" "}
+              {sortConfig?.key === "name" &&
+                (sortConfig.direction === "asc" ? "↑" : "↓")}
+            </span>
+            <span
+              onClick={() => handleSort("email")}
+              className="cursor-pointer hover:text-red-600"
+            >
+              Email{" "}
+              {sortConfig?.key === "email" &&
+                (sortConfig.direction === "asc" ? "↑" : "↓")}
+            </span>
+            <span
+              onClick={() => handleSort("divisi")}
+              className="cursor-pointer hover:text-red-600"
+            >
+              Divisions{" "}
+              {sortConfig?.key === "divisi" &&
+                (sortConfig.direction === "asc" ? "↑" : "↓")}
+            </span>
+            <span
+              onClick={() => handleSort("vote")}
+              className="cursor-pointer hover:text-red-600"
+            >
+              Vote Status{" "}
+              {sortConfig?.key === "vote" &&
+                (sortConfig.direction === "asc" ? "↑" : "↓")}
+            </span>
             <span>Action</span>
           </div>
 
@@ -307,10 +383,12 @@ export default function AdminTable() {
                           </button>
                         </div>
                         <div>
-                          <button onClick={()=>{
-                            setIsModalOpen({open: true, state: "edit" });
-                            setUserData(user)
-                            }}>
+                          <button
+                            onClick={() => {
+                              setIsModalOpen({ open: true, state: "edit" });
+                              setUserData(user);
+                            }}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               width={30}
@@ -319,7 +397,7 @@ export default function AdminTable() {
                             >
                               <path
                                 fill="currentColor"
-                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128m89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4-6.8-3.4-14-2.6-21.3l6.8-60.9l1.2-11.1l7.9-7.9l77.3-77.3c-24.5-27.7-60-45.5m45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8l137.9-137.9l-71.7-71.7zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8l-4.1 4.1l71.8 71.7l41.8-41.8c9.3-9.4 9.3-24.5 0-33.9"
+                                d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0S96 57.3 96 128s57.3 128 128 128m89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h274.9c-2.4 6.8-3.4-14-2.6-21.3l6.8-60.9l1.2-11.1l7.9-7.9l77.3-77.3c-24.5-27.7-60-45.5m45.3 145.3l-6.8 61c-1.1 10.2 7.5 18.8 17.6 17.6l60.9-6.8l137.9-137.9l-71.7-71.7zM633 268.9L595.1 231c-9.3-9.3-24.5-9.3-33.8 0l-37.8 37.8l-4.1 4.1l71.8 71.7l41.8-41.8c9.3-9.4 9.3-24.5 0-33.9"
                               />
                             </svg>
                           </button>
@@ -381,27 +459,28 @@ export default function AdminTable() {
         </div>
       </div>
       {/* new user modal*/}
-      {(isModalOpen.open && isModalOpen.state === "create") ? (
-      <Modal 
-      onCloseButton={() => setIsModalOpen({open:false, state:"create"})}
-      state="create"
-      onSubmit={handleSubmitCreate}
-      />
-    ):(isModalOpen.open && isModalOpen.state === "edit") ? (
-      <Modal 
-      onCloseButton={() => setIsModalOpen({open:false, state:"edit"})}
-      state="edit"
-      onSubmit={(formData) => {
-        if (userData?.id) {
-          handleSubmitEdit(userData.id, formData);
-        } else {
-          alert("User ID is undefined. Cannot edit user.");
-        }
-      }}
-      userData={userData}
-      />
-    ):""
-      }
+      {isModalOpen.open && isModalOpen.state === "create" ? (
+        <Modal
+          onCloseButton={() => setIsModalOpen({ open: false, state: "create" })}
+          state="create"
+          onSubmit={handleSubmitCreate}
+        />
+      ) : isModalOpen.open && isModalOpen.state === "edit" ? (
+        <Modal
+          onCloseButton={() => setIsModalOpen({ open: false, state: "edit" })}
+          state="edit"
+          onSubmit={(formData) => {
+            if (userData?.id) {
+              handleSubmitEdit(userData.id, formData);
+            } else {
+              alert("User ID is undefined. Cannot edit user.");
+            }
+          }}
+          userData={userData}
+        />
+      ) : (
+        ""
+      )}
     </div>
   );
 }
