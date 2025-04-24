@@ -175,7 +175,7 @@ export default function AdminTable() {
     page: number,
     selectedDivisi: string = "all",
     isVoted: string = "all",
-    USERS_PER_PAGE: number = 6
+    USERS_PER_PAGE: number = 5
   ) => {
     try {
       console.log("Fetching page:", page);
