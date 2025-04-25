@@ -8,6 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import type { ApiResponseUsers } from "@/lib/api/config";
 import type { User } from "@/lib/types";
 import { Jersey_10 } from "next/font/google";
 import { useEffect, useState } from "react";
@@ -188,23 +189,23 @@ export default function AdminTable() {
     try {
       console.log("Fetching page:", page);
 
-      // const cacheKey = cacheUtils.generateCacheKey(
-      //   page,
-      //   USERS_PER_PAGE,
-      //   isVoted,
-      //   selectedDivisi,
-      //   sortConfig?.key,
-      //   sortConfig?.direction
-      // );
+      const cacheKey = cacheUtils.generateCacheKey(
+        page,
+        USERS_PER_PAGE,
+        isVoted,
+        selectedDivisi,
+        sortConfig?.key,
+        sortConfig?.direction
+      );
 
-      // // Try to get from cache first
-      // let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
-      //   cacheKey
-      // );
+      // Try to get from cache first
+      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
+        cacheKey
+      );
 
-      // if (!data) {
+      if (!data) {
         // If not in cache, fetch from API
-        let data = await authApi.getUsers(
+        data = await authApi.getUsers(
           page,
           USERS_PER_PAGE,
           isVoted,
@@ -214,26 +215,26 @@ export default function AdminTable() {
 
         // Cache the response
         if (data.message === "success") {
-          // await cacheUtils.setCacheData(cacheKey, data);
+          await cacheUtils.setCacheData(cacheKey, data);
           console.log(data.data)
         }
-      // }
+      }
       
 
       // Apply sorting to the data
-      // if (sortConfig && data.data) {
-      //   data.data = cacheUtils.sortData(
-      //     data.data,
-      //     sortConfig.key,
-      //     sortConfig.direction
-      //   );
-      // }
+      if (sortConfig && data.data) {
+        data.data = cacheUtils.sortData(
+          data.data,
+          sortConfig.key,
+          sortConfig.direction
+        );
+      }
 
-      // setUsers(data.data);
-      // setTotalPages(
-      //   data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
-      // );
-      // setCurrentPage(data.currentPage || page);
+      setUsers(data.data);
+      setTotalPages(
+        data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
+      );
+      setCurrentPage(data.currentPage || page);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to load users");
@@ -249,6 +250,8 @@ export default function AdminTable() {
     fetchUsers(currentPage, divisi, voteStatus, 5, search);
   }, [currentPage, selectedDivisi, selectedVoteStatus, search]);
 
+  // Create array of page numbers safely
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -272,7 +275,6 @@ export default function AdminTable() {
 
                 const divisi = selectedDivisi || "all";
                 const voteStatus = selectedVoteStatus || undefined;
-                console.log("Search keyword: "+search);
 
                 await fetchUsers(currentPage, divisi, voteStatus, 5,search);
               }}
