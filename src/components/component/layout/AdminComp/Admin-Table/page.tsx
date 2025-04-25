@@ -195,7 +195,11 @@ export default function AdminTable() {
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
 
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
 
@@ -226,7 +230,10 @@ export default function AdminTable() {
     }
   };
 
-  const handleSubmitEdit = async (userId: string, formData: formDataInterface) => {
+  const handleSubmitEdit = async (
+    userId: string,
+    formData: formDataInterface
+  ) => {
     try {
       const res = await authApi.editUser(userId, formData);
       if (res.message === "success") {
@@ -261,7 +268,7 @@ export default function AdminTable() {
 
   useEffect(() => {
     const divisi = selectedDivisi || "all";
-    const voteStatus = selectedVoteStatus || undefined;
+    const voteStatus = selectedVoteStatus || "all";
 
     fetchUsers(currentPage, divisi, voteStatus);
   }, [currentPage, selectedDivisi, selectedVoteStatus]);
