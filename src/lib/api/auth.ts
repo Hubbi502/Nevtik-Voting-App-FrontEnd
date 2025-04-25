@@ -54,30 +54,39 @@ export const authApi = {
     isVoted: string = "all", 
     divisi: string = "all",
     search: string = ""
-  ) => {
-    const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, isVoted, divisi, undefined, undefined, search);
+) => {
+    // Ensure default values are "all" instead of empty strings
+    const statusVote = isVoted || "all";
+    const division = divisi || "all";
+    
+    const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, statusVote, division, undefined, undefined, search);
     
     // Try to get data from cache first
     const cachedData = await cacheUtils.getCacheData<ApiResponse<User[]>>(cacheKey);
     if (cachedData) {
-      return cachedData;
+        return cachedData;
     }
 
-    // If no cache, fetch from API
+    // If no cache, fetch from API with proper defaults
     const response = await fetch(
-      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}&search=${search}`, 
-      {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
+        `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${division}&statusVote=${statusVote}&search=${search}`, 
+        {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         }
-      }
     );
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json() as ApiResponse<User[]>;
     
     // Cache the response
     if (data.message === 'success') {
-      await cacheUtils.setCacheData(cacheKey, data);
+        await cacheUtils.setCacheData(cacheKey, data);
     }
     
     return data;
