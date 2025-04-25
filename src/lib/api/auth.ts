@@ -66,7 +66,6 @@ export const authApi = {
     // If no cache, fetch from API
     const response = await fetch(
       `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}&search=${search}`, 
-      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}&search=${search}`, 
       {
         credentials: 'include',
         headers: {
