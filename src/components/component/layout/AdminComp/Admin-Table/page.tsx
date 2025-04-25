@@ -84,25 +84,113 @@ const getPaginationRange = (currentPage: number, totalPages: number) => {
 };
 
 export default function AdminTable() {
+  // Initialize all state variables at the top
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [userData, setUserData] = useState<User | undefined>(undefined);
-  const USERS_PER_PAGE = 5;
-  const [isModalOpen, setIsModalOpen] = useState<{
-    open: boolean;
-    state: "edit" | "create";
-  }>({ open: false, state: "create" });
-
   const [selectedDivisi, setSelectedDivisi] = useState("all");
   const [selectedVoteStatus, setSelectedVoteStatus] = useState("all");
-
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<{
+    open: boolean;
+    state: "edit" | "create";
+  }>({ open: false, state: "create" });
+  
+  const USERS_PER_PAGE = 5;
+
+  // Add missing handleSearch function
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Update fetchUsers to include search parameter
+  const fetchUsers = async (
+    page: number,
+    selectedDivisi: string = "all",
+    isVoted: string = "all",
+    USERS_PER_PAGE: number = 5,
+    search: string = ""
+  ) => {
+    try {
+      console.log("Fetching page:", page);
+
+      const cacheKey = cacheUtils.generateCacheKey(
+        page,
+        USERS_PER_PAGE,
+        isVoted,
+        selectedDivisi,
+        sortConfig?.key,
+        sortConfig?.direction,
+        search
+      );
+
+      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(cacheKey);
+
+      if (!data) {
+        data = await authApi.getUsers(
+          page,
+          USERS_PER_PAGE,
+          isVoted,
+          selectedDivisi,
+          search
+        );
+
+        if (data.message === "success") {
+          await cacheUtils.setCacheData(cacheKey, data);
+        }
+      }
+
+      // Ensure data.data is always an array
+      const usersData = Array.isArray(data.data) ? data.data : [];
+
+      // Apply sorting to the data
+      if (sortConfig && usersData.length > 0) {
+        data.data = cacheUtils.sortData(
+          usersData,
+          sortConfig.key,
+          sortConfig.direction
+        );
+      }
+
+      setUsers(usersData);
+      setTotalPages(
+        data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
+      );
+      setCurrentPage(data.currentPage || page);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Failed to load users");
+      setUsers([]); // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add useEffect for search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchUsers(currentPage, selectedDivisi, selectedVoteStatus, USERS_PER_PAGE, searchQuery);
+    }, 300); // Debounce search for 300ms
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, currentPage, selectedDivisi, selectedVoteStatus]);
+
+  // Create array of page numbers safely
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      console.log("Changing to page:", newPage); // Debug log
+      setCurrentPage(newPage);
+    }
+  };
 
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
@@ -171,82 +259,12 @@ export default function AdminTable() {
     }
   };
 
-  const fetchUsers = async (
-    page: number,
-    selectedDivisi: string = "all",
-    isVoted: string = "all",
-    USERS_PER_PAGE: number = 6
-  ) => {
-    try {
-      console.log("Fetching page:", page);
-
-      const cacheKey = cacheUtils.generateCacheKey(
-        page,
-        USERS_PER_PAGE,
-        isVoted,
-        selectedDivisi,
-        sortConfig?.key,
-        sortConfig?.direction
-      );
-
-      // Try to get from cache first
-      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
-        cacheKey
-      );
-
-      if (!data) {
-        // If not in cache, fetch from API
-        data = await authApi.getUsers(
-          page,
-          USERS_PER_PAGE,
-          isVoted,
-          selectedDivisi
-        );
-
-        // Cache the response
-        if (data.message === "success") {
-          await cacheUtils.setCacheData(cacheKey, data);
-        }
-      }
-
-      // Apply sorting to the data
-      if (sortConfig && data.data) {
-        data.data = cacheUtils.sortData(
-          data.data,
-          sortConfig.key,
-          sortConfig.direction
-        );
-      }
-
-      setUsers(data.data);
-      setTotalPages(
-        data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
-      );
-      setCurrentPage(data.currentPage || page);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     const divisi = selectedDivisi || "all";
     const voteStatus = selectedVoteStatus || undefined;
 
     fetchUsers(currentPage, divisi, voteStatus);
   }, [currentPage, selectedDivisi, selectedVoteStatus]);
-
-  // Create array of page numbers safely
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      console.log("Changing to page:", newPage); // Debug log
-      setCurrentPage(newPage);
-    }
-  };
 
   return (
     <div className="bg-[#F8F2DE] w-full mx-36 mt-[120px] p-4  rounded-3xl">
@@ -257,6 +275,8 @@ export default function AdminTable() {
             <input
               type="text"
               placeholder="Search..."
+              value={searchQuery}
+              onChange={handleSearch}
               className="text-black bg-white mt-8 w-full p-3 border border-black rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex justify-between ml-12 mt-9">
@@ -345,7 +365,7 @@ export default function AdminTable() {
               <div className="text-red-500">{error}</div>
             ) : (
               <>
-                {users.length === 0 ? (
+                {(!users || users.length === 0) ? (
                   <div>No users found</div>
                 ) : (
                   users.map((user, index) => (

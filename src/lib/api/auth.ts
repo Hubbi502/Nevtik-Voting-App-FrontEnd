@@ -48,8 +48,14 @@ export const authApi = {
     return response.json();
   },
 
-  getUsers: async (page: number, USERS_PER_PAGE: number, isVoted:string = "all", divisi:string = "all") => {
-    const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, isVoted, divisi);
+  getUsers: async (
+    page: number, 
+    USERS_PER_PAGE: number, 
+    isVoted: string = "all", 
+    divisi: string = "all",
+    search: string = ""
+  ) => {
+    const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, isVoted, divisi, undefined, undefined, search);
     
     // Try to get data from cache first
     const cachedData = await cacheUtils.getCacheData<ApiResponse<User[]>>(cacheKey);
@@ -59,7 +65,7 @@ export const authApi = {
 
     // If no cache, fetch from API
     const response = await fetch(
-      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}`, 
+      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}&search=${search}`, 
       {
         credentials: 'include',
         headers: {

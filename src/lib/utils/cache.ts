@@ -1,8 +1,16 @@
 export const CACHE_NAME = 'admin-users-cache';
 
 export const cacheUtils = {
-  generateCacheKey: (page: number, perPage: number, isVoted: string, divisi: string, sortBy?: string, sortOrder?: string) => {
-    return `users-${page}-${perPage}-${isVoted}-${divisi}-${sortBy || 'none'}-${sortOrder || 'none'}`;
+  generateCacheKey: (
+    page: number, 
+    perPage: number, 
+    isVoted: string, 
+    divisi: string, 
+    sortBy?: string, 
+    sortOrder?: string,
+    search?: string
+  ) => {
+    return `users-${page}-${perPage}-${isVoted}-${divisi}-${sortBy || 'none'}-${sortOrder || 'none'}-${search || ''}`;
   },
 
   // Add method to sort cached data
