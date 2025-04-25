@@ -1,6 +1,6 @@
-import { API_BASE_URL, defaultHeaders, ApiResponse } from './config';
-import { User, CurrentUser } from '../types';
+import { CurrentUser, User } from '../types';
 import { cacheUtils } from '../utils/cache';
+import { API_BASE_URL, ApiResponse, defaultHeaders } from './config';
 
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -48,7 +48,7 @@ export const authApi = {
     return response.json();
   },
 
-  getUsers: async (page: number, USERS_PER_PAGE: number, isVoted:string = "all", divisi:string = "all") => {
+  getUsers: async (page: number, USERS_PER_PAGE: number, isVoted:string = "all", divisi:string = "all", search:string = "") => {
     const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, isVoted, divisi);
     
     // Try to get data from cache first
@@ -59,7 +59,7 @@ export const authApi = {
 
     // If no cache, fetch from API
     const response = await fetch(
-      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}`, 
+      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${divisi}&statusVote=${isVoted}&search=${search}`, 
       {
         credentials: 'include',
         headers: {
@@ -67,7 +67,6 @@ export const authApi = {
         }
       }
     );
-    
     const data = await response.json() as ApiResponse<User[]>;
     
     // Cache the response

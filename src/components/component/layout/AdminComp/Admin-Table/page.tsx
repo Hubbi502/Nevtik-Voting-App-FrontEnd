@@ -8,7 +8,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type { ApiResponseUsers } from "@/lib/api/config";
 import type { User } from "@/lib/types";
 import { Jersey_10 } from "next/font/google";
 import { useEffect, useState } from "react";
@@ -89,6 +88,7 @@ export default function AdminTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [userData, setUserData] = useState<User | undefined>(undefined);
   const USERS_PER_PAGE = 5;
   const [isModalOpen, setIsModalOpen] = useState<{
@@ -107,7 +107,11 @@ export default function AdminTable() {
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
 
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
 
@@ -138,7 +142,10 @@ export default function AdminTable() {
     }
   };
 
-  const handleSubmitEdit = async (userId: string, formData: formDataInterface) => {
+  const handleSubmitEdit = async (
+    userId: string,
+    formData: formDataInterface
+  ) => {
     try {
       const res = await authApi.editUser(userId, formData);
       if (res.message === "success") {
@@ -175,54 +182,58 @@ export default function AdminTable() {
     page: number,
     selectedDivisi: string = "all",
     isVoted: string = "all",
-    USERS_PER_PAGE: number = 5
+    USERS_PER_PAGE: number = 5,
+    searchParam?: string
   ) => {
     try {
       console.log("Fetching page:", page);
 
-      const cacheKey = cacheUtils.generateCacheKey(
-        page,
-        USERS_PER_PAGE,
-        isVoted,
-        selectedDivisi,
-        sortConfig?.key,
-        sortConfig?.direction
-      );
+      // const cacheKey = cacheUtils.generateCacheKey(
+      //   page,
+      //   USERS_PER_PAGE,
+      //   isVoted,
+      //   selectedDivisi,
+      //   sortConfig?.key,
+      //   sortConfig?.direction
+      // );
 
-      // Try to get from cache first
-      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
-        cacheKey
-      );
+      // // Try to get from cache first
+      // let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(
+      //   cacheKey
+      // );
 
-      if (!data) {
+      // if (!data) {
         // If not in cache, fetch from API
-        data = await authApi.getUsers(
+        let data = await authApi.getUsers(
           page,
           USERS_PER_PAGE,
           isVoted,
-          selectedDivisi
+          selectedDivisi,
+          searchParam
         );
 
         // Cache the response
         if (data.message === "success") {
-          await cacheUtils.setCacheData(cacheKey, data);
+          // await cacheUtils.setCacheData(cacheKey, data);
+          console.log(data.data)
         }
-      }
+      // }
+      
 
       // Apply sorting to the data
-      if (sortConfig && data.data) {
-        data.data = cacheUtils.sortData(
-          data.data,
-          sortConfig.key,
-          sortConfig.direction
-        );
-      }
+      // if (sortConfig && data.data) {
+      //   data.data = cacheUtils.sortData(
+      //     data.data,
+      //     sortConfig.key,
+      //     sortConfig.direction
+      //   );
+      // }
 
-      setUsers(data.data);
-      setTotalPages(
-        data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
-      );
-      setCurrentPage(data.currentPage || page);
+      // setUsers(data.data);
+      // setTotalPages(
+      //   data.totalPages || Math.ceil((data.total ?? 0) / USERS_PER_PAGE)
+      // );
+      // setCurrentPage(data.currentPage || page);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to load users");
@@ -233,13 +244,11 @@ export default function AdminTable() {
 
   useEffect(() => {
     const divisi = selectedDivisi || "all";
-    const voteStatus = selectedVoteStatus || undefined;
+    const voteStatus = selectedVoteStatus || "all";
 
-    fetchUsers(currentPage, divisi, voteStatus);
-  }, [currentPage, selectedDivisi, selectedVoteStatus]);
+    fetchUsers(currentPage, divisi, voteStatus, 5, search);
+  }, [currentPage, selectedDivisi, selectedVoteStatus, search]);
 
-  // Create array of page numbers safely
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -252,14 +261,46 @@ export default function AdminTable() {
     <div className="bg-[#F8F2DE] w-full mx-36 mt-[120px] p-4  rounded-3xl">
       <div className="pt-2 w-full px-2">
         <p className="text-2xl text-black font-bold pl-12">Users</p>
-        <div className="flex w-full gap-4 ">
-          <div className="flex w-7xl ">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="text-black bg-white mt-8 w-full p-3 border border-black rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex justify-between ml-12 mt-9">
+        <div className="flex w-full gap-4 align-center">
+          <div className="flex w-7xl align-center">
+            <form
+              action=""
+              className="flex w-full items-center gap-2 mt-8"
+              onSubmit={async(e) => {
+                e.preventDefault();
+                
+
+                const divisi = selectedDivisi || "all";
+                const voteStatus = selectedVoteStatus || undefined;
+                console.log("Search keyword: "+search);
+
+                await fetchUsers(currentPage, divisi, voteStatus, 5,search);
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Search..."
+                onChange={(e) => setSearch(e.target.value)}
+                className="text-black bg-white w-full p-3 border border-black rounded-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                className="w-12 h-12 bg-red-500 flex justify-center items-center text-white rounded-2xl active:bg-red-600"
+                type="submit"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M9.5 16q-2.725 0-4.612-1.888T3 9.5t1.888-4.612T9.5 3t4.613 1.888T16 9.5q0 1.1-.35 2.075T14.7 13.3l5.6 5.6q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-5.6-5.6q-.75.6-1.725.95T9.5 16m0-2q1.875 0 3.188-1.312T14 9.5t-1.312-3.187T9.5 5T6.313 6.313T5 9.5t1.313 3.188T9.5 14"
+                  />
+                </svg>
+              </button>
+            </form>
+            <div className="flex justify-between ml-5 mt-9">
               <DropdownButton
                 title="Status"
                 items={["Vote", "Not Vote"]}
