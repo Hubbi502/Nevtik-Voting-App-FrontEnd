@@ -8,7 +8,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type { ApiResponseUsers } from "@/lib/api/config";
+import type { ApiResponse, ApiResponseUsers } from "@/lib/api/config";
 import type { User } from "@/lib/types";
 import { Jersey_10 } from "next/font/google";
 import { useEffect, useState } from "react";
@@ -120,32 +120,15 @@ export default function AdminTable() {
   ) => {
     try {
       console.log("Fetching page:", page);
-
-      const cacheKey = cacheUtils.generateCacheKey(
-        page,
-        USERS_PER_PAGE,
-        isVoted,
-        selectedDivisi,
-        sortConfig?.key,
-        sortConfig?.direction,
-        search
-      );
-
-      let data = await cacheUtils.getCacheData<ApiResponseUsers<User[]>>(cacheKey);
-
-      if (!data) {
-        data = await authApi.getUsers(
+      
+      const data: ApiResponseUsers<User[]> = await authApi.getUsers(
           page,
           USERS_PER_PAGE,
           isVoted,
           selectedDivisi,
           search
         );
-
-        if (data.message === "success") {
-          await cacheUtils.setCacheData(cacheKey, data);
-        }
-      }
+        console.log(data)
 
       // Ensure data.data is always an array
       const usersData = Array.isArray(data.data) ? data.data : [];

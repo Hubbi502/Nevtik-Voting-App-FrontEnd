@@ -1,6 +1,6 @@
 import { CurrentUser, User } from '../types';
 import { cacheUtils } from '../utils/cache';
-import { API_BASE_URL, ApiResponse, defaultHeaders } from './config';
+import { API_BASE_URL, ApiResponse, ApiResponseUsers, defaultHeaders } from './config';
 
 export const authApi = {
   login: async (email: string, password: string) => {
@@ -58,14 +58,6 @@ export const authApi = {
     // Ensure default values are "all" instead of empty strings
     const statusVote = isVoted || "all";
     const division = divisi || "all";
-    
-    const cacheKey = cacheUtils.generateCacheKey(page, USERS_PER_PAGE, statusVote, division, undefined, undefined, search);
-    
-    // Try to get data from cache first
-    const cachedData = await cacheUtils.getCacheData<ApiResponse<User[]>>(cacheKey);
-    if (cachedData) {
-        return cachedData;
-    }
 
     // If no cache, fetch from API with proper defaults
     const response = await fetch(
@@ -82,13 +74,8 @@ export const authApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json() as ApiResponse<User[]>;
-    
-    // Cache the response
-    if (data.message === 'success') {
-        await cacheUtils.setCacheData(cacheKey, data);
-    }
-    
+    const data = await response.json() as ApiResponseUsers<User[]>;
+  
     return data;
   },
 
