@@ -19,38 +19,37 @@ export default function MainComp() {
     }, []);
   return (
       <>
-      <div className="bg-[#F8F2DE] w-full h-screen  sm:my-auto flex flex-col-reverse sm:flex-row  lg:justify-around items-center px-4 sm:px-0">
-          <div className="text-black lg:my-auto mb-44 ">
-            <h1 className="font-semibold text-4xl sm:text-6xl text-center sm:text-left">Selamat Datang, {user?.name}</h1>
+      <div className="bg-[#F8F2DE] w-full h-screen relative flex flex-col">
+          <div className="absolute left-30 top-1/3 text-black">
+            <h1 className="font-semibold text-6xl">Selamat Datang, {user?.name}</h1>
             <p 
-              className="my-3 text-[20px] sm:text-[32px] font-light text-center sm:text-left" 
+              className="my-3 text-[32px] font-light" 
               style={{ fontFamily: "Nunito, sans-serif" }}
             >
               Pilihanmu akan menentukan masa depan
             </p>
             <p 
-              className="mt-5 text-xl sm:text-4xl font-light tracking-wider text-center sm:text-left" 
+              className="mt-5 text-4xl font-light tracking-wider" 
               style={{ fontFamily: "Montserrat, sans-serif" }}
             >
-              Siap buat memilih ketua Nevtik <br className="hidden sm:block" />Berikutnya?
+              Siap buat memilih ketua Nevtik <br />Berikutnya?
             </p>
-            <div className="mt-10 flex justify-center sm:justify-start">
+            <div className="mt-10">
               <a 
                 href="/Voting-Page" 
-                className="w-full sm:w-auto h-full p-3 sm:p-4 bg-red-500 rounded-xl text-white text-lg sm:text-2xl hover:bg-amber-50 hover:text-black ease-in duration-300 text-center" 
+                className="w-full h-full p-4 bg-red-500 rounded-xl text-white text-2xl hover:bg-amber-50 hover:text-black ease-in duration-300" 
                 style={{ fontFamily: "Times New Roman, serif" }}
               >
                 Mulai Voting
               </a>   
             </div>
-            <div className="mb-12">
-            <img 
-              src="/banner-img.png" 
-              alt="" 
-              className="w-[300px] sm:w-[700px] h-auto mx-auto sm:mx-0" 
-            />
-            </div>
+            <div className="absolute -top-1/2 -right-10/6 ">
+              <img src="/banner-img.png" alt="" width={700} height={700}/>
+            </div>         
           </div>
+          <div className="absolute right-6 -bottom-0 ">
+            <img src="/logo-rmv.png" alt="" width={50} height={50} />
+          </div>  
       </div>
       </>
   )
