@@ -33,11 +33,7 @@ export const authApi = {
       credentials: 'include',
       body: JSON.stringify(userData),
     });
-    const data = await response.json() as ApiResponse<User>;
-    if (data.message === 'User successfully added') {
-      await cacheUtils.clearCache(); // Clear cache when new user is added
-    }
-    return data;
+    return response.json() as Promise<ApiResponse<User>>;
   },
 
   logout: async () => {
@@ -54,24 +50,22 @@ export const authApi = {
     isVoted: string = "all", 
     divisi: string = "all",
     search: string = ""
-) => {
-    // Ensure default values are "all" instead of empty strings
+  ) => {
     const statusVote = isVoted || "all";
     const division = divisi || "all";
 
-    // If no cache, fetch from API with proper defaults
     const response = await fetch(
-        `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${division}&statusVote=${statusVote}&search=${search}`, 
-        {
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+      `${API_BASE_URL}/auth/users?page=${page}&limit=${USERS_PER_PAGE}&divisi=${division}&statusVote=${statusVote}&search=${search}`, 
+      {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
         }
+      }
     );
     
     if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json() as ApiResponseUsers<User[]>;
@@ -98,14 +92,10 @@ export const authApi = {
       headers: defaultHeaders,
       credentials: 'include',
       body: JSON.stringify({ 
-        id : userId
+        id: userId
       }),
     });
-    const data = await response.json() as ApiResponse<User>;
-    if (data.message === 'success') {
-      await cacheUtils.clearCache(); // Clear cache when user is deleted
-    }
-    return data;
+    return response.json() as Promise<ApiResponse<User>>;
   },
 
   editUser: async (userId: string, userData: {
@@ -122,11 +112,6 @@ export const authApi = {
         ...userData
       }),
     });
-    const data = await response.json() as ApiResponse<User>;
-    if (data.message === 'success') {
-      await cacheUtils.clearCache(); // Clear cache when user is updated
-    }
-    return data;
+    return response.json() as Promise<ApiResponse<User>>;
   }
-
 };

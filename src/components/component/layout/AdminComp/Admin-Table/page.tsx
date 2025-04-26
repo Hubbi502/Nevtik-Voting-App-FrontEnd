@@ -15,7 +15,6 @@ import { useEffect, useState } from "react";
 import Modal from "./modal";
 
 import { authApi } from "@/lib/api";
-import { cacheUtils } from "@/lib/utils/cache";
 const jersey10 = Jersey_10({
   weight: "400",
   subsets: ["latin"],
@@ -56,7 +55,6 @@ const DropdownButton = ({
         ))}
       </select>
 
-      {/* Icon panah custom biar kayak Menu (bisa pake SVG langsung juga) */}
       <div className="pointer-events-none absolute right-4 top-1/2 transform -translate-y-1/2 text-red-500">
         ▼
       </div>
@@ -84,7 +82,6 @@ const getPaginationRange = (currentPage: number, totalPages: number) => {
 };
 
 export default function AdminTable() {
-  // Initialize all state variables at the top
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -102,15 +99,13 @@ export default function AdminTable() {
     open: boolean;
     state: "edit" | "create";
   }>({ open: false, state: "create" });
-  
+
   const USERS_PER_PAGE = 5;
 
-  // Add missing handleSearch function
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  // Update fetchUsers to include search parameter
   const fetchUsers = async (
     page: number,
     selectedDivisi: string = "all",
@@ -132,15 +127,7 @@ export default function AdminTable() {
 
       // Ensure data.data is always an array
       const usersData = Array.isArray(data.data) ? data.data : [];
-
-      // Apply sorting to the data
-      if (sortConfig && usersData.length > 0) {
-        data.data = cacheUtils.sortData(
-          usersData,
-          sortConfig.key,
-          sortConfig.direction
-        );
-      }
+      console.log(usersData);
 
       setUsers(usersData);
       setTotalPages(
@@ -150,27 +137,23 @@ export default function AdminTable() {
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to load users");
-      setUsers([]); // Set empty array on error
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add useEffect for search
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchUsers(currentPage, selectedDivisi, selectedVoteStatus, USERS_PER_PAGE, searchQuery);
-    }, 300); // Debounce search for 300ms
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, currentPage, selectedDivisi, selectedVoteStatus]);
 
-  // Create array of page numbers safely
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
-      console.log("Changing to page:", newPage); // Debug log
+      console.log("Changing to page:", newPage);
       setCurrentPage(newPage);
     }
   };
@@ -201,8 +184,7 @@ export default function AdminTable() {
     try {
       const res = await authApi.addUser(formData);
       if (res.message === "User berhasil ditambahkan") {
-        await cacheUtils.clearCache(); // Clear all cache
-        await fetchUsers(currentPage); // Refetch current page
+        await fetchUsers(currentPage);
         setIsModalOpen({ open: false, state: "create" });
       } else {
         alert("Error creating user: " + res.message);
@@ -220,8 +202,7 @@ export default function AdminTable() {
     try {
       const res = await authApi.editUser(userId, formData);
       if (res.message === "success") {
-        await cacheUtils.clearCache(); // Clear all cache
-        await fetchUsers(currentPage); // Refetch current page
+        await fetchUsers(currentPage);
         setIsModalOpen({ open: false, state: "edit" });
       } else {
         alert("Error editing user: " + res.message);
@@ -237,8 +218,7 @@ export default function AdminTable() {
       try {
         const res = await authApi.deleteUser(id);
         if (res.message === "success") {
-          await cacheUtils.clearCache(); // Clear all cache
-          await fetchUsers(currentPage); // Refetch current page
+          await fetchUsers(currentPage);
         } else {
           alert("Error deleting user: " + res.message);
         }
@@ -358,7 +338,9 @@ export default function AdminTable() {
                 {(!users || users.length === 0) ? (
                   <div>No users found</div>
                 ) : (
-                  users.map((user, index) => (
+                  users.map((user, index) => 
+                  // {console.log(user)}
+                    (
                     <div
                       key={user.id}
                       className="grid grid-cols-6 bg-white px-3 py-6 rounded-lg shadow-lg items-center"
@@ -370,10 +352,10 @@ export default function AdminTable() {
                       <span>{user.email}</span>
                       <span>{user.divisi}</span>
                       <span>
-                        {user.vote ? (
-                          <div className="h-8 w-8 bg-green-500 rounded-3xl "></div>
-                        ) : (
+                        {(user.vote === null ) ? (
                           <div className="h-8 w-8 bg-red-500 rounded-3xl "></div>
+                        ) : (
+                          <div className="h-8 w-8 bg-green-500 rounded-3xl "></div>
                         )}
                       </span>
                       <div className="pl-3 text-red-800 flex flex-row gap-5">
@@ -414,7 +396,9 @@ export default function AdminTable() {
                         </div>
                       </div>
                     </div>
-                  ))
+                  )
+
+                )
                 )}
 
                 {totalPages > 1 && (

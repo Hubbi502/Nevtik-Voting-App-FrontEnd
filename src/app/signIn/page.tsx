@@ -47,7 +47,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className='bg-gradient-to-b from-red-800 to-red-400 flex items-center justify-center h-screen'>
+    <div className='bg-gradient-to-b pt-32 from-red-800 to-red-400 flex justify-center h-screen'>
       <div className='my-10'>
         <Image
           src={"assets/banner.svg"}
